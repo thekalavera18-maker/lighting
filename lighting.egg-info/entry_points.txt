@@ -1,0 +1,3 @@
+[console_scripts]
+lighting = happylighting.app:main
+lighting-build = happylighting.build:main

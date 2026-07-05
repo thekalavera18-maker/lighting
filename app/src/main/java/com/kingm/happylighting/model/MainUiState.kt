@@ -1,0 +1,26 @@
+package com.kingm.happylighting.model
+
+data class MainUiState(
+    val devices: List<LightDevice> = emptyList(),
+    val connected: Boolean = false,
+    val scanning: Boolean = false,
+    val reconnectPhase: ReconnectPhase = ReconnectPhase.IDLE,
+    val deviceName: String = "Not connected",
+    val deviceAddress: String? = null,
+    val savedDeviceAddress: String? = null,
+    val savedDeviceName: String? = null,
+    val statusText: String = "Ready",
+    val baseColor: Triple<Int, Int, Int> = Triple(255, 140, 66),
+    val appliedColor: Triple<Int, Int, Int> = Triple(255, 140, 66),
+    val brightness: Int = 100,
+    val speed: Int = 60,
+    val activeNativeEffect: String? = null,
+    val activeCustomEffect: String? = null,
+    val permissionGranted: Boolean = false,
+    val pickerMode: PickerMode = PickerMode.WHEEL,
+    val savedSwatches: List<SavedSwatch> = emptyList(),
+    val appStyle: AppStyleState = AppStyleState(),
+    val autoConnectInProgress: Boolean = false,
+    val availableNativeEffects: List<NativeEffectOption> = emptyList(),
+    val availableCustomEffects: List<CustomEffectOption> = emptyList(),
+)

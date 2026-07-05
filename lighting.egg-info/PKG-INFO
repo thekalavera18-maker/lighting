@@ -1,0 +1,68 @@
+Metadata-Version: 2.4
+Name: lighting
+Version: 0.1.0
+Summary: Windows HappyLighting BLE controller prototype
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: bleak>=0.22.3
+Requires-Dist: PySide6>=6.9.0
+
+# HappyLighting Desktop
+
+Windows desktop controller for BLE LED devices that work with the HappyLighting or Triones mobile apps.
+
+Current scope:
+
+- polished PySide6 desktop UI
+- saved-device reconnect
+- system tray integration
+- on/off, static color, brightness
+- native effect presets with speed
+- custom animated effects
+- Windows single-file `.exe` build path
+
+## Requirements
+
+- Windows 10 or 11 with Bluetooth Low Energy support
+- Python 3.11+
+- The light must not already be connected to your phone
+
+## Install
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e .
+```
+
+## Run
+
+```powershell
+lighting
+```
+
+Or:
+
+```powershell
+python -m happylighting
+```
+
+## Build EXE
+
+```powershell
+.\build.ps1
+```
+
+## Notes
+
+- Settings now live in `%APPDATA%\HappyLighting\settings.json`.
+- Legacy `lighting-settings.json` is migrated automatically on first run.
+- Some compatible controllers advertise under names like `QHM-*` instead of `Triones` or `HappyLighting`, so the scan view now shows nearby named BLE devices and tags likely matches first.
+- The prototype uses the same Triones/HappyLighting command bytes documented by community reverse engineering and the Home Assistant integration.
+- Supported write UUIDs:
+  - `0000ffd5-0000-1000-8000-00805f9b34fb`
+  - `0000ffd9-0000-1000-8000-00805f9b34fb`
+  - `0000ffe5-0000-1000-8000-00805f9b34fb`
+  - `0000ffe9-0000-1000-8000-00805f9b34fb`
+- The brightness slider is RGB scaling, not a separate device-native brightness command.

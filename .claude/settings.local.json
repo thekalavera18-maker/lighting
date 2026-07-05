@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m happylighting)",
+      "Bash(py -3.11 -c \"import PySide6; print\\('ok'\\)\")",
+      "Bash(py -3.12 -c \"import PySide6; print\\('ok'\\)\")",
+      "Bash(py -3.13 -c \"import PySide6; print\\('ok'\\)\")"
+    ]
+  }
+}
