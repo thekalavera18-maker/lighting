@@ -283,6 +283,20 @@ class MainViewModel(
         }
     }
 
+    fun applyDreamEffect(mode: Int, label: String) {
+        stopEffect(restoreStatic = false)
+        performAction("Applied $label.") {
+            controller.setDreamEffect(mode)
+            _uiState.update {
+                it.copy(
+                    activeNativeEffect = null,
+                    activeCustomEffect = null,
+                    statusText = "Applied $label.",
+                )
+            }
+        }
+    }
+
     fun startCustomEffect(effectId: String) {
         effectJob?.cancel()
         _uiState.update { it.copy(activeCustomEffect = effectId, activeNativeEffect = null, statusText = "Running ${effectLabel(effectId)}...") }
