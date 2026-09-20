@@ -4,6 +4,7 @@ import android.content.Context
 import com.kingm.happylighting.model.AppStyleState
 import com.kingm.happylighting.model.MainUiState
 import com.kingm.happylighting.model.PickerMode
+import com.kingm.happylighting.model.SavedDreamPreset
 import com.kingm.happylighting.model.SavedSwatch
 
 class SettingsRepository(context: Context) {
@@ -18,6 +19,7 @@ class SettingsRepository(context: Context) {
             ?.let { runCatching { PickerMode.valueOf(it) }.getOrDefault(PickerMode.WHEEL) }
             ?: PickerMode.WHEEL,
         savedSwatches = loadSwatches(),
+        savedDreamPresets = loadDreamPresets(),
         appStyle = AppStyleState(
             accentColor = loadColor(KEY_ACCENT_COLOR_R, KEY_ACCENT_COLOR_G, KEY_ACCENT_COLOR_B, Triple(255, 142, 94)),
             saturation = preferences.getInt(KEY_APP_SATURATION, 100).coerceIn(0, 200),
@@ -82,12 +84,35 @@ class SettingsRepository(context: Context) {
         preferences.edit().putString(KEY_SWATCHES, encoded).apply()
     }
 
+    fun saveDreamPresets(presets: List<SavedDreamPreset>) {
+        val encoded = presets.joinToString(";") { preset ->
+            val safeName = preset.name.replace("|", " ").replace(";", " ")
+            "${preset.mode}|$safeName"
+        }
+        preferences.edit().putString(KEY_DREAM_PRESETS, encoded).apply()
+    }
+
     fun saveDevice(address: String?, name: String?) {
         preferences.edit()
             .putString(KEY_LAST_DEVICE_ADDRESS, address)
             .putString(KEY_LAST_DEVICE_NAME, name)
             .apply()
     }
+
+    private fun loadDreamPresets(): List<SavedDreamPreset> =
+        preferences.getString(KEY_DREAM_PRESETS, null)
+            ?.split(";")
+            ?.mapNotNull { entry ->
+                val separator = entry.indexOf('|')
+                if (separator <= 0 || separator >= entry.lastIndex) {
+                    return@mapNotNull null
+                }
+                val mode = entry.substring(0, separator).toIntOrNull() ?: return@mapNotNull null
+                val name = entry.substring(separator + 1).trim()
+                if (name.isBlank()) return@mapNotNull null
+                SavedDreamPreset(mode = mode.coerceIn(0, 255), name = name)
+            }
+            ?: emptyList()
 
     private fun loadColor(
         keyR: String,
@@ -124,6 +149,7 @@ class SettingsRepository(context: Context) {
         const val KEY_SPEED = "speed"
         const val KEY_PICKER_MODE = "picker_mode"
         const val KEY_SWATCHES = "swatches"
+        const val KEY_DREAM_PRESETS = "dream_presets"
         const val KEY_ACCENT_COLOR_R = "accent_color_r"
         const val KEY_ACCENT_COLOR_G = "accent_color_g"
         const val KEY_ACCENT_COLOR_B = "accent_color_b"
