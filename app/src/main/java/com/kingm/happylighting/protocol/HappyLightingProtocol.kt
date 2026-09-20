@@ -97,6 +97,16 @@ object HappyLightingProtocol {
         )
     }
 
+    fun dreamModePacket(mode: Int): ByteArray = byteArrayOf(
+        0x9E.toByte(),
+        0x00,
+        mode.coerceIn(0, 255).toByte(),
+        0x46,
+        0xFF.toByte(),
+        0x00,
+        0xE9.toByte(),
+    )
+
     fun statusRequestPacket(): ByteArray = byteArrayOf(0xEF.toByte(), 0x01, 0x77)
 
     fun parseStatus(raw: ByteArray): DeviceStatus? {
