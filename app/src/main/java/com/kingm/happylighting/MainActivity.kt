@@ -51,6 +51,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -95,6 +96,7 @@ import com.kingm.happylighting.model.AppStyleState
 import com.kingm.happylighting.model.LightDevice
 import com.kingm.happylighting.model.MainUiState
 import com.kingm.happylighting.model.PickerMode
+import com.kingm.happylighting.model.SavedDreamPreset
 import com.kingm.happylighting.model.SavedSwatch
 import com.kingm.happylighting.ui.MainViewModel
 import com.kingm.happylighting.ui.theme.HappyLightingTheme
@@ -156,6 +158,8 @@ class MainActivity : ComponentActivity() {
                         onApplySwatch = viewModel::applySwatch,
                         onRemoveSwatch = viewModel::removeSwatch,
                         onDreamEffect = viewModel::applyDreamEffect,
+                        onSaveDreamPreset = viewModel::saveDreamPreset,
+                        onRemoveDreamPreset = viewModel::removeDreamPreset,
                         onAppAccentColorChange = viewModel::setAppAccentColor,
                         onAppSaturationChange = viewModel::setAppSaturation,
                         onAppContrastChange = viewModel::setAppContrast,
@@ -196,6 +200,8 @@ private fun LumoraScreen(
     onApplySwatch: (Long) -> Unit,
     onRemoveSwatch: (Long) -> Unit,
     onDreamEffect: (Int, String) -> Unit,
+    onSaveDreamPreset: (Int, String) -> Unit,
+    onRemoveDreamPreset: (Int) -> Unit,
     onAppAccentColorChange: (Triple<Int, Int, Int>) -> Unit,
     onAppSaturationChange: (Int) -> Unit,
     onAppContrastChange: (Int) -> Unit,
@@ -306,6 +312,8 @@ private fun LumoraScreen(
                     DreamEffectsSection(
                         uiState = uiState,
                         onDreamEffect = onDreamEffect,
+                        onSaveDreamPreset = onSaveDreamPreset,
+                        onRemoveDreamPreset = onRemoveDreamPreset,
                     )
                 }
                 item {
@@ -844,10 +852,90 @@ private val verifiedDreamPresets = listOf(
 private fun DreamEffectsSection(
     uiState: MainUiState,
     onDreamEffect: (Int, String) -> Unit,
+    onSaveDreamPreset: (Int, String) -> Unit,
+    onRemoveDreamPreset: (Int) -> Unit,
 ) {
-    SurfaceSection(title = "UNDERGLOW FX") {
+    var explorerMode by rememberSaveable { mutableStateOf(0x1D) }
+    var presetName by rememberSaveable { mutableStateOf("") }
+
+    SurfaceSection(title = "MODE EXPLORER") {
         Text(
-            "Verified DREAM controller modes from our BLE testing.",
+            "Tap Previous or Next and Lumora immediately sends that DREAM mode. When you find a good one, name it and save it.",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            "Mode 0x%02X  •  %d".format(explorerMode, explorerMode),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    explorerMode = if (explorerMode <= 0) 0xFF else explorerMode - 1
+                    onDreamEffect(explorerMode, "Explorer 0x%02X".format(explorerMode))
+                },
+                enabled = uiState.connected,
+                modifier = Modifier.weight(1f),
+            ) { Text("Previous") }
+            Button(
+                onClick = { onDreamEffect(explorerMode, "Explorer 0x%02X".format(explorerMode)) },
+                enabled = uiState.connected,
+                modifier = Modifier.weight(1f),
+            ) { Text("Test") }
+            OutlinedButton(
+                onClick = {
+                    explorerMode = if (explorerMode >= 0xFF) 0 else explorerMode + 1
+                    onDreamEffect(explorerMode, "Explorer 0x%02X".format(explorerMode))
+                },
+                enabled = uiState.connected,
+                modifier = Modifier.weight(1f),
+            ) { Text("Next") }
+        }
+        OutlinedTextField(
+            value = presetName,
+            onValueChange = { presetName = it.take(32) },
+            label = { Text("Preset name") },
+            placeholder = { Text("Yellow Starry") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Button(
+            onClick = {
+                onSaveDreamPreset(explorerMode, presetName)
+                if (presetName.isNotBlank()) presetName = ""
+            },
+            enabled = presetName.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("★ Save Mode 0x%02X".format(explorerMode))
+        }
+
+        if (uiState.savedDreamPresets.isNotEmpty()) {
+            Text(
+                "SAVED MODES",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            uiState.savedDreamPresets.forEach { preset ->
+                SavedDreamPresetRow(
+                    preset = preset,
+                    connected = uiState.connected,
+                    onApply = { onDreamEffect(preset.mode, preset.name) },
+                    onRemove = { onRemoveDreamPreset(preset.mode) },
+                )
+            }
+        }
+    }
+
+    SurfaceSection(title = "VERIFIED UNDERGLOW FX") {
+        Text(
+            "Modes we already identified during BLE testing.",
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
             style = MaterialTheme.typography.bodySmall,
         )
@@ -870,6 +958,35 @@ private fun DreamEffectsSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SavedDreamPresetRow(
+    preset: SavedDreamPreset,
+    connected: Boolean,
+    onApply: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.55f))
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(preset.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(
+                "0x%02X  •  %d".format(preset.mode, preset.mode),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Button(onClick = onApply, enabled = connected) { Text("Play") }
+        OutlinedButton(onClick = onRemove) { Text("Remove") }
     }
 }
 
