@@ -19,6 +19,7 @@ data class MainUiState(
     val permissionGranted: Boolean = false,
     val pickerMode: PickerMode = PickerMode.WHEEL,
     val savedSwatches: List<SavedSwatch> = emptyList(),
+    val savedDreamPresets: List<SavedDreamPreset> = emptyList(),
     val appStyle: AppStyleState = AppStyleState(),
     val autoConnectInProgress: Boolean = false,
     val availableNativeEffects: List<NativeEffectOption> = emptyList(),
