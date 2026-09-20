@@ -13,6 +13,7 @@ import com.kingm.happylighting.model.LightDevice
 import com.kingm.happylighting.model.MainUiState
 import com.kingm.happylighting.model.PickerMode
 import com.kingm.happylighting.model.ReconnectPhase
+import com.kingm.happylighting.model.SavedDreamPreset
 import com.kingm.happylighting.model.SavedSwatch
 import com.kingm.happylighting.protocol.CustomEffects
 import com.kingm.happylighting.protocol.HappyLightingProtocol
@@ -281,6 +282,32 @@ class MainViewModel(
                 it.copy(activeNativeEffect = effectId, activeCustomEffect = null)
             }
         }
+    }
+
+    fun saveDreamPreset(mode: Int, name: String) {
+        val cleaned = name.trim().take(32)
+        if (cleaned.isBlank()) {
+            _uiState.update { it.copy(statusText = "Give this mode a name first.") }
+            return
+        }
+        val preset = SavedDreamPreset(mode = mode.coerceIn(0, 255), name = cleaned)
+        val updated = buildList {
+            add(preset)
+            addAll(_uiState.value.savedDreamPresets.filterNot { it.mode == preset.mode })
+        }.take(32)
+        settingsRepository.saveDreamPresets(updated)
+        _uiState.update {
+            it.copy(
+                savedDreamPresets = updated,
+                statusText = "Saved ${preset.name} as mode 0x%02X.".format(preset.mode),
+            )
+        }
+    }
+
+    fun removeDreamPreset(mode: Int) {
+        val updated = _uiState.value.savedDreamPresets.filterNot { it.mode == mode }
+        settingsRepository.saveDreamPresets(updated)
+        _uiState.update { it.copy(savedDreamPresets = updated, statusText = "Removed saved mode.") }
     }
 
     fun applyDreamEffect(mode: Int, label: String) {
