@@ -64,6 +64,10 @@ class HappyLightingController(
         gattClient.write(HappyLightingProtocol.nativeEffectPacket(effectId, speed))
     }
 
+    suspend fun setDreamEffect(mode: Int) {
+        gattClient.write(HappyLightingProtocol.dreamModePacket(mode))
+    }
+
     suspend fun requestStatus(): DeviceStatus? =
         gattClient.requestStatus()?.let(HappyLightingProtocol::parseStatus)
 }
