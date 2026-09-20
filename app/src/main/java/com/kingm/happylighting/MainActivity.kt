@@ -155,6 +155,7 @@ class MainActivity : ComponentActivity() {
                         onSaveSwatch = viewModel::saveCurrentSwatch,
                         onApplySwatch = viewModel::applySwatch,
                         onRemoveSwatch = viewModel::removeSwatch,
+                        onDreamEffect = viewModel::applyDreamEffect,
                         onAppAccentColorChange = viewModel::setAppAccentColor,
                         onAppSaturationChange = viewModel::setAppSaturation,
                         onAppContrastChange = viewModel::setAppContrast,
@@ -194,6 +195,7 @@ private fun LumoraScreen(
     onSaveSwatch: () -> Unit,
     onApplySwatch: (Long) -> Unit,
     onRemoveSwatch: (Long) -> Unit,
+    onDreamEffect: (Int, String) -> Unit,
     onAppAccentColorChange: (Triple<Int, Int, Int>) -> Unit,
     onAppSaturationChange: (Int) -> Unit,
     onAppContrastChange: (Int) -> Unit,
@@ -298,6 +300,12 @@ private fun LumoraScreen(
                         onApplySwatch = onApplySwatch,
                         onRemoveSwatch = onRemoveSwatch,
                         onWheelInteractionChange = { wheelInteracting = it },
+                    )
+                }
+                item {
+                    DreamEffectsSection(
+                        uiState = uiState,
+                        onDreamEffect = onDreamEffect,
                     )
                 }
                 item {
@@ -793,6 +801,74 @@ private fun ColorSection(
         ) {
             Button(onClick = onTurnOn, enabled = uiState.connected, modifier = Modifier.weight(1f)) { Text("Power On") }
             Button(onClick = onTurnOff, enabled = uiState.connected, modifier = Modifier.weight(1f)) { Text("Power Off") }
+        }
+    }
+}
+
+private data class DreamPreset(
+    val mode: Int,
+    val label: String,
+)
+
+private val verifiedDreamPresets = listOf(
+    DreamPreset(0x01, "Rainbow Chase"),
+    DreamPreset(0x03, "Blue/Green/Yellow Fade"),
+    DreamPreset(0x06, "Red Chase"),
+    DreamPreset(0x07, "Red Flicker"),
+    DreamPreset(0x08, "Red Flicker II"),
+    DreamPreset(0x09, "Pink/Purple/Blue Chase"),
+    DreamPreset(0x0A, "Green Chase"),
+    DreamPreset(0x0B, "Blue Flicker Chase"),
+    DreamPreset(0x0C, "Multicolor Chase"),
+    DreamPreset(0x0D, "Red Chase Reverse"),
+    DreamPreset(0x0E, "Pink/White/Green Chase"),
+    DreamPreset(0x0F, "Blue Chase"),
+    DreamPreset(0x10, "Pink Chase"),
+    DreamPreset(0x11, "Yellow/Blue/White Chase"),
+    DreamPreset(0x12, "Green/White/Pink Bounce"),
+    DreamPreset(0x13, "Red/Cyan/Blue Chase"),
+    DreamPreset(0x14, "Cyan/Green/Yellow/Pink"),
+    DreamPreset(0x15, "Multicolor Chase II"),
+    DreamPreset(0x16, "Green/White Chase"),
+    DreamPreset(0x17, "Green Comet"),
+    DreamPreset(0x18, "White/Pink/Green Chase"),
+    DreamPreset(0x19, "Blue/White Reverse"),
+    DreamPreset(0x1A, "White/Green Flicker"),
+    DreamPreset(0x1B, "White Pulse + Color Chase"),
+    DreamPreset(0x1C, "Pink/Blue Bounce"),
+    DreamPreset(0x34, "Pink/White Flicker"),
+    DreamPreset(0x3A, "Dynamic Multicolor"),
+)
+
+@Composable
+private fun DreamEffectsSection(
+    uiState: MainUiState,
+    onDreamEffect: (Int, String) -> Unit,
+) {
+    SurfaceSection(title = "UNDERGLOW FX") {
+        Text(
+            "Verified DREAM controller modes from our BLE testing.",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        verifiedDreamPresets.chunked(2).forEach { rowPresets ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowPresets.forEach { preset ->
+                    Button(
+                        onClick = { onDreamEffect(preset.mode, preset.label) },
+                        enabled = uiState.connected,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(preset.label)
+                    }
+                }
+                if (rowPresets.size == 1) {
+                    Box(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
